@@ -1,0 +1,20 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using WebApplication2.Areas.Identity.Data
+@inject SignInManager<WebApplication2User> SignInManager
+@inject UserManager<WebApplication2User> UserManager
+
+    <ul class="navbar-nav">
+        @if (SignInManager.IsSignedIn(User))
+{
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                Administration
+            </a>
+            <div class="dropdown-menu" aria-labelledby="Administration">
+                <a class="dropdown-item" id="register" asp-area="Identity" asp-page="/Account/Register">Create User</a>
+                <a class="dropdown-item" id="role" asp-area="UserManagement" asp-controller="ApplicationRole" asp-action="Index">Role Management</a>
+                <a class="dropdown-item" id="role" asp-area="UserManagement" asp-controller="UserEdit" asp-action="Index">User Management</a>
+            </div>
+        </li>
+}
+    </ul>
