@@ -476,7 +476,5 @@ We can create a partial view _LoginAuth similar to  \Views\Shared\_LoginPartial 
 In a production system we should remove the Register option from _LoginPartial and create a startup module which initializes the system with an admin user account.
 
  
-Return error messages to the view by calling this statement to add an error message to the model before the return to the view is called
-```
-ModelState.AddModelError(string.Empty, "There was an error");
+
 ```
