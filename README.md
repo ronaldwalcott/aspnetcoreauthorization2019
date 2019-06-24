@@ -572,7 +572,7 @@ Add an authorization policy to ApplicationRoleController
 
 ```
 
-If we now login as a test user we see the following message. Only the username Administrator has the required cliam to be granted access.
+If we now login as a test user the following message appears when we try to access the Role Management option on the Administration menu. Only the username Administrator has the required claim to be granted access.
  
 ![Access Denied](Art/AccessDenied.PNG)
 
