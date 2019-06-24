@@ -9,6 +9,7 @@ namespace WebApplication2.Areas.UserManagement.Constants
     {
         public const string AccessToTest1ScreenPolicy = "ViewTest1Screen";
         public const string AccessToTest2ScreenPolicy = "ViewTest2Screen";
+        public const string AdministratorPolicy = "Administrator";
 
     }
 }

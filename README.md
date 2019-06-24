@@ -458,7 +458,7 @@ We can create a partial view _LoginAuth similar to  \Views\Shared\_LoginPartial 
 
     <ul class="navbar-nav">
         @if (SignInManager.IsSignedIn(User))
-{
+        {
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
                 Administration
@@ -469,12 +469,113 @@ We can create a partial view _LoginAuth similar to  \Views\Shared\_LoginPartial 
                 <a class="dropdown-item" id="role" asp-area="UserManagement" asp-controller="UserEdit" asp-action="Index">User Management</a>
             </div>
         </li>
-}
+        }
     </ul>
 ```
 
-In a production system we should remove the Register option from _LoginPartial and create a startup module which initializes the system with an admin user account.
+In a production system we should remove the Register option from _LoginPartial, add authorization policies and create a startup module which initializes the system with an admin user account.
 
- 
+We can first create our authorization policy then initialize the system with an administration user.
+
+Add a new claim name (based on the policy name) and policy name in ClaimNames.cs and PolicyNames.cs respectively
 
 ```
+public static List<string> ClaimName = new List<string>() {
+            PolicyNames.AccessToTest1ScreenPolicy,
+            PolicyNames.AccessToTest2ScreenPolicy,
+            PolicyNames.AdministratorPolicy  
+
+```
+
+```
+public const string AdministratorPolicy = "Administrator";
+
+```
+
+Modify Startup.cs with an InitializeAdministrator method 
+
+```
+    private async Task InitializeAdministrator(IServiceProvider serviceProvider)
+    {
+        var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<WebApplication2User>>();
+        string roleName = "Administrator";
+        IdentityResult roleResult;
+
+        //create an administrator role
+        var roleExist = await roleManager.RoleExistsAsync(roleName);
+        if (!roleExist)
+        {
+            roleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
+            if (roleResult.Succeeded)
+            {
+                //add the administrator related claim to the administrator role
+                Claim claim = new Claim(PolicyNames.AdministratorPolicy, "");
+                IdentityRole identityRole = await roleManager.FindByNameAsync(roleName);
+                IdentityResult claimResult = await roleManager.AddClaimAsync(identityRole, claim);
+                    
+            }
+        }
+
+        var administratorUser = new WebApplication2User
+        {
+            UserName = Configuration.GetSection("UserSettings")["UserName"],
+            Surname = Configuration.GetSection("UserSettings")["UserSurname"],
+            FirstName = Configuration.GetSection("UserSettings")["UserFirstname"]
+        };
+
+        string UserPassword = Configuration.GetSection("UserSettings")["UserPassword"];
+        var adminUser = await userManager.FindByNameAsync(Configuration.GetSection("UserSettings")["UserName"]);
+
+        if (adminUser == null)
+        {
+            IdentityResult identityUser = await userManager.CreateAsync(administratorUser, UserPassword);
+            if (identityUser.Succeeded)
+            {
+                //add the Administrator role to the user 
+                await userManager.AddToRoleAsync(administratorUser, roleName);
+
+            }
+        }
+    }
+
+```
+
+and call it from the Configure method.
+
+```
+InitializeAdministrator(serviceProvider).Wait();
+
+```
+
+Add an IServiceProvider parameter to Configure
+
+```
+public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider) 
+
+```
+Add username configuration to appsettings.json
+
+```
+  "UserSettings": {
+    "UserName": "Administrator",
+    "UserPassword": "P@ssw0rd",
+    "UserSurname": "Administrator",
+    "UserFirstame": "Administrator"
+  }
+```
+
+Add an authorization policy to ApplicationRoleController
+
+```
+    [Authorize(Policy = PolicyNames.AdministratorPolicy)]
+
+```
+
+If we now login as a test user we see the following message. Only the username Administrator has the required cliam to be granted access.
+ 
+![Access Denied](Art/AccessDenied.PNG)
+
+
+This provides an example of the configuration required to authentication and authorization for LOB ASP .NET Core applications and is in no way complete.
+Logging should be added for every action and all exceptions. Paging and searching needs to be completed and the page actions associated with the scaffolded *Identity* which are not required should be removed.

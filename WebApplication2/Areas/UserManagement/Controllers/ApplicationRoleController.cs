@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ using WebApplication2.Areas.UserManagement.Models;
 namespace WebApplication2.Areas.UserManagement.Controllers
 {
     [Area("UserManagement")]
+    [Authorize(Policy = PolicyNames.AdministratorPolicy)]
     public class ApplicationRoleController : Controller
     {
        

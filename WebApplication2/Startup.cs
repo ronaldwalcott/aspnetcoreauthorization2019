@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -50,6 +51,7 @@ namespace WebApplication2
             {
                 options.AddPolicy(PolicyNames.AccessToTest1ScreenPolicy, policy => policy.Requirements.Add(new AuthorizationNameRequirement(PolicyNames.AccessToTest1ScreenPolicy)));
                 options.AddPolicy(PolicyNames.AccessToTest2ScreenPolicy, policy => policy.Requirements.Add(new AuthorizationNameRequirement(PolicyNames.AccessToTest2ScreenPolicy)));
+                options.AddPolicy(PolicyNames.AdministratorPolicy, policy => policy.Requirements.Add(new AuthorizationNameRequirement(PolicyNames.AdministratorPolicy)));
             });
 
             services.AddSingleton<IAuthorizationHandler, AuthorizationNameHandler>();
@@ -57,7 +59,7 @@ namespace WebApplication2
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
             {
@@ -86,7 +88,52 @@ namespace WebApplication2
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
 
-
+            InitializeAdministrator(serviceProvider).Wait();
         }
+
+        private async Task InitializeAdministrator(IServiceProvider serviceProvider)
+        {
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = serviceProvider.GetRequiredService<UserManager<WebApplication2User>>();
+            string roleName = "Administrator";
+            IdentityResult roleResult;
+
+            //create an administrator role
+            var roleExist = await roleManager.RoleExistsAsync(roleName);
+            if (!roleExist)
+            {
+                roleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
+                if (roleResult.Succeeded)
+                {
+                    //add the administrator related claim to the administrator role
+                    Claim claim = new Claim(PolicyNames.AdministratorPolicy, "");
+                    IdentityRole identityRole = await roleManager.FindByNameAsync(roleName);
+                    IdentityResult claimResult = await roleManager.AddClaimAsync(identityRole, claim);
+                    
+                }
+            }
+
+            var administratorUser = new WebApplication2User
+            {
+                UserName = Configuration.GetSection("UserSettings")["UserName"],
+                Surname = Configuration.GetSection("UserSettings")["UserSurname"],
+                FirstName = Configuration.GetSection("UserSettings")["UserFirstname"]
+            };
+
+            string UserPassword = Configuration.GetSection("UserSettings")["UserPassword"];
+            var adminUser = await userManager.FindByNameAsync(Configuration.GetSection("UserSettings")["UserName"]);
+
+            if (adminUser == null)
+            {
+                IdentityResult identityUser = await userManager.CreateAsync(administratorUser, UserPassword);
+                if (identityUser.Succeeded)
+                {
+                    //add the Administrator role to the user 
+                    await userManager.AddToRoleAsync(administratorUser, roleName);
+
+                }
+            }
+        }
+
     }
 }

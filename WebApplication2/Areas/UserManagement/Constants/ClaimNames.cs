@@ -9,7 +9,8 @@ namespace WebApplication2.Areas.UserManagement.Constants
     {
         public static List<string> ClaimName = new List<string>() {
             PolicyNames.AccessToTest1ScreenPolicy,
-            PolicyNames.AccessToTest2ScreenPolicy
+            PolicyNames.AccessToTest2ScreenPolicy,
+            PolicyNames.AdministratorPolicy
         };
     }
 
